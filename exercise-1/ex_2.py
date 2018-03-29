@@ -10,7 +10,11 @@ from random import randint
 
 
 def is_prime(x):
-    for i in range(2, x + 1):
+    if x in [1, 2]:
+        return True
+    if x % 2 == 0:
+        return False
+    for i in range(3, x + 1, 2):
         if x % i == 0 and i != x:
             return False
     return True
