@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Enunciado:
-    Implemente em qualquer linguagem de programação um programa para verificar
-    se o valor de entrada é, ou não, um nú́mero primo. Existe pior e melhor
-    caso? Quais são eles?
+    Implemente em qualquer linguagem de programação um programa um programa
+    para listar os números primos menores ou igual ao valor de entrada.
+    Existe pior e melhor caso? Quais são eles?
 """
 import big_o
 from random import randint
