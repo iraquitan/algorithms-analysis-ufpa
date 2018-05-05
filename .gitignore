@@ -99,3 +99,12 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Numpy
+*.npy
+
+# Figures
+*.svg
+*.eps
+*.png
+*.pdf

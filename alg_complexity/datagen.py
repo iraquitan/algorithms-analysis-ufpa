@@ -19,6 +19,13 @@ def range_n_inv(n, end=0, step=-1):
     return list(range(n, end, step))
 
 
+def integers_equal(n, min_, max_):
+    """ Return sequence of N equal integers between min_ and max_ (included).
+    """
+    eq = random.randint(min_, max_)
+    return [eq for _ in range(n)]
+
+
 def integers(n, min_, max_):
     """ Return sequence of N random integers between min_ and max_ (included).
     """

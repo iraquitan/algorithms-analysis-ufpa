@@ -6,7 +6,7 @@ import numpy as np
 def execution_time(func_handle, datagen, n_min=100, n_max=100000, n_measures=10,
                    n_repeats=3, n_number=10**6):
 
-    class func_wrapper(object):
+    class FuncWrapper:
 
         def __init__(self, n):
             self.data = datagen(n)
@@ -19,7 +19,7 @@ def execution_time(func_handle, datagen, n_min=100, n_max=100000, n_measures=10,
     execution_time = np.zeros(n_measures)
     for i, n in enumerate(ns):
         print(f'Running for n={n}')
-        timer = Timer(func_wrapper(n))
+        timer = Timer(FuncWrapper(n), )
         measurements = timer.repeat(n_repeats, n_number)
-        execution_time[i] = np.min(measurements)
+        execution_time[i] = np.min(measurements) / n_number
     return ns, execution_time
