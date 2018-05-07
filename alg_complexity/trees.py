@@ -102,6 +102,9 @@ class BinarySearchTree(BaseTree):
 
     def tree_insert(self, value):
         z = Node(value)
+        self._tree_insert(z)
+
+    def _tree_insert(self, z):
         y = None
         x = self.root
         while x is not None:
@@ -117,6 +120,7 @@ class BinarySearchTree(BaseTree):
             y.left = z
         else:
             y.right = z
+        return z
 
     def transplant(self, u, v):
         if u.p is None:
@@ -150,5 +154,11 @@ class AVLTree(BinarySearchTree):
         return self.tree_height(x.left) - self.tree_height(x.right)
 
     def tree_insert(self, value):
-        super().tree_insert(value)
+        z = AVLNode(value)
+        self._tree_insert(z)
         # Do post-balance check
+
+    def balance(self, x):
+        while x is not None:
+            self.balance_factor(x)
+
