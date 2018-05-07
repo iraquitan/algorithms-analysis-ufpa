@@ -150,15 +150,64 @@ class BinarySearchTree(BaseTree):
 
 class AVLTree(BinarySearchTree):
 
+    # @staticmethod
     def balance_factor(self, x):
         return self.tree_height(x.left) - self.tree_height(x.right)
+        # return x.left.h - x.right.h
 
     def tree_insert(self, value):
         z = AVLNode(value)
         self._tree_insert(z)
+        z.h = self.tree_height(z)
         # Do post-balance check
+        self.balance(z)
 
     def balance(self, x):
-        while x is not None:
-            self.balance_factor(x)
+        while x.p is not None:
+            bf = self.balance_factor(x.p)
+            x.p.h = bf
+            if bf <= -2:
+                self.left_rotate(x)
+            elif bf >= 2:
+                self.right_rotate(x)
+            x = x.p
 
+    def left_rotate(self, x):
+        y = x.right  # Set y
+        x.right = y.left  # Turn y's left subtree into x's right subtree
+        if y.left is not None:
+            y.left.p = x
+        y.p = x.p  # Link x's parent to y
+        if x.p is None:
+            self.root = y
+        elif x == x.p.left:
+            x.p.left = y
+        else:
+            x.p.right = y
+        y.left = x  # Put x on y's left
+        x.p = y
+        x.h = self.tree_height(x)
+        y.h = self.tree_height(y)
+
+    def right_rotate(self, y):
+        x = y.left  # Set x
+        y.left = x.right  # Turn x's right subtree into y's left subtree
+        if x.right is not None:
+            x.right.p = y
+        x.p = y.p  # Link y's parent to x
+        if y.p is None:
+            self.root = x
+        elif y == y.p.right:
+            y.p.right = x
+        else:
+            y.p.left = x
+        x.right = y  # Put y on x's right
+        y.p = x
+        x.h = self.tree_height(x)
+        y.h = self.tree_height(y)
+
+
+if __name__ == '__main__':
+    from alg_complexity.trees import AVLTree
+    keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
+    bst = AVLTree(keys)
