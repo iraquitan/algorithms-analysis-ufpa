@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from random import randint
+
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
@@ -36,8 +38,30 @@ class AVLNode(Node):
             right_h = self.right.h
         return max(left_h, right_h) + 1
 
+    @property
+    def balance_factor(self):
+        h_left, h_right = 0, 0
+        if self.left:
+            h_left = self.left.h
+        if self.right:
+            h_right = self.right.h
+        return h_left - h_right
+
     def __repr__(self):
         return f"Node[{self.key}, h={self.h}]"
+
+
+class BlackRedNode(Node):
+    def __init__(self, key, left=None, right=None, p=None):
+        super(BlackRedNode, self).__init__(key, left, right, p)
+        self.red = True
+
+    @property
+    def color(self):
+        return 'red' if self.red else 'black'
+
+    def __repr__(self):
+        return f"Node[{self.key}, c={self.color}]"
 
 
 class BaseTree(object):
@@ -80,21 +104,33 @@ class BaseTree(object):
                 x = x.right
         return x
 
+    def min(self, x=None):
+        if x:
+            return self._tree_min(x)
+        else:
+            return self._tree_min(self.root)
+
     @staticmethod
-    def tree_min(x):
+    def _tree_min(x):
         while x.left is not None:
             x = x.left
         return x
 
+    def max(self, x=None):
+        if x:
+            return self._tree_max(x)
+        else:
+            return self._tree_max(self.root)
+
     @staticmethod
-    def tree_max(x):
+    def _tree_max(x):
         while x.right is not None:
             x = x.right
         return x
 
     def tree_successor(self, x):
         if x.right is not None:
-            return self.tree_min(x.right)
+            return self.min(x.right)
         y = x.p
         while y is not None and x == y.right:
             x = y
@@ -129,8 +165,9 @@ class BaseTree(object):
 
 class BinarySearchTree(BaseTree):
 
-    def __init__(self, keys=None):
+    def __init__(self, keys=None, debug=False):
         self.root = None
+        self.debug = debug
         if keys is not None:
             for k in keys:
                 self.tree_insert(k)
@@ -167,13 +204,26 @@ class BinarySearchTree(BaseTree):
         if v is not None:
             v.p = u.p
 
-    def tree_delete(self, z):
+    def tree_delete(self, value):
+        z = self.tree_search(self.root, value)
+        if z:
+            if self.debug:
+                print(f"found node with value={value}, deleting.")
+            ret = self._tree_delete(z)
+            if ret:
+                return ret
+            else:
+                return z.p
+
+    def _tree_delete(self, z):
         if z.left is None:
             self.transplant(z, z.right)
+            return z.right
         elif z.right is None:
             self.transplant(z, z.left)
+            return z.left
         else:
-            y = self.tree_min(z.right)
+            y = self.min(z.right)
             if y.p != z:
                 self.transplant(y, y.right)
                 y.right = z.right
@@ -181,19 +231,10 @@ class BinarySearchTree(BaseTree):
             self.transplant(z, y)
             y.left = z.left
             y.left.p = y
+            return y
 
 
 class AVLTree(BinarySearchTree):
-
-    # @staticmethod
-    def balance_factor(self, x):
-        # return self.tree_height(x.left) - self.tree_height(x.right)
-        h_left, h_right = 0, 0
-        if x.left:
-            h_left = x.left.h
-        if x.right:
-            h_right = x.right.h
-        return h_left - h_right
 
     def tree_insert(self, value):
         z = AVLNode(value)
@@ -202,21 +243,34 @@ class AVLTree(BinarySearchTree):
         # Do post-balance check
         self.balance(z)
 
-    def balance(self, x):
-        while True:
-            if x.p is None:
-                break
-            bf = self.balance_factor(x.p)
-            # x.p.h = bf
+    def tree_delete(self, value):
+        x = super().tree_delete(value)
+        if x:
+            self.balance(x)
+
+    def balance(self, z):
+        # he(p) > hd(p) | he(u) > hd(u)  # rotacao a direita
+        # he(p) > hd(p) | hd(u) > he(u)  # rotacao dupla a direita
+        while z:
+            bf = z.balance_factor
             if bf <= -2:
-                self.left_rotate(x.p)
+                if z.right.balance_factor > 0:
+                    self.right_rotate(z.right)
+                    self.left_rotate(z)
+                elif z.right.balance_factor < 0:
+                    self.left_rotate(z)
             elif bf >= 2:
-                self.right_rotate(x.p)
-            if x.p is not None:
-                x = x.p
+                if z.left.balance_factor < 0:
+                    self.left_rotate(z.left)
+                    self.right_rotate(z)
+                elif z.left.balance_factor > 0:
+                    self.right_rotate(z)
+            z = z.p
 
     def left_rotate(self, x):
         y = x.right  # Set y
+        if self.debug:
+            print(f"left rotating x={x.key}, y={y.key}")
         x.right = y.left  # Turn y's left subtree into x's right subtree
         if y.left is not None:
             y.left.p = x
@@ -229,11 +283,11 @@ class AVLTree(BinarySearchTree):
             x.p.right = y
         y.left = x  # Put x on y's left
         x.p = y
-        # x.h = self.tree_height(x)
-        # y.h = self.tree_height(y)
 
     def right_rotate(self, y):
         x = y.left  # Set x
+        if self.debug:
+            print(f"right rotating y={y.key}, x={x.key}")
         y.left = x.right  # Turn x's right subtree into y's left subtree
         if x.right is not None:
             x.right.p = y
@@ -246,13 +300,30 @@ class AVLTree(BinarySearchTree):
             y.p.left = x
         x.right = y  # Put y on x's right
         y.p = x
-        # x.h = self.tree_height(x)
-        # y.h = self.tree_height(y)
+
+
+class BlackRedTree(BinarySearchTree):
+
+    def __init__(self, keys=None, debug=False):
+        super().__init__(keys, debug)
+        self.nil = BlackRedNode(None)
+        self.nil.red = False
+
+    def tree_insert(self, value):
+        z = BlackRedNode(value)
 
 
 if __name__ == '__main__':
-    from alg_complexity.trees import AVLTree
-    keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
+    # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
+    # keys = [ord(c) for c in 'mnolkqphia']
+    # keys = {randint(0, 100) for x in range(50)}
+    # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
+    keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
     bst = AVLTree(keys)
     G = bst.draw(show=True)
+    for k in [20, 60, 90]:
+        bst.tree_delete(k)
+        bst.draw(show=True)
+
+    print()
 
