@@ -12,7 +12,7 @@ Enunciado:
 """
 import matplotlib.pyplot as plt
 import numpy as np
-# import big_o
+import big_o
 
 from alg_complexity import datagen
 from alg_complexity.utils import execution_time
