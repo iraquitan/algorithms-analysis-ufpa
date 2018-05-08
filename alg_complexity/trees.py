@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import networkx as nx
+import matplotlib.pyplot as plt
+from networkx.drawing.nx_pydot import graphviz_layout
 
 
 class Node(object):
@@ -13,15 +16,34 @@ class Node(object):
 
 
 class AVLNode(Node):
-    def __init__(self, key, left=None, righ=None, p=None):
-        super(AVLNode, self).__init__(key, left, righ, p)
-        self.h = 0
+    def __init__(self, key, left=None, right=None, p=None):
+        super(AVLNode, self).__init__(key, left, right, p)
+
+    @property
+    def is_leaf(self):
+        return self.left is None and self.right is None
+
+    @property
+    def h(self):
+        left_h, right_h = 0, 0
+        if self is None:
+            return -1
+        # if self.is_leaf:
+        #     return 1
+        if self.left:
+            left_h = self.left.h
+        if self.right:
+            right_h = self.right.h
+        return max(left_h, right_h) + 1
 
     def __repr__(self):
         return f"Node[{self.key}, h={self.h}]"
 
 
 class BaseTree(object):
+
+    # def __repr__(self):
+    #     return self.inorder_tree_walk(self.root)
 
     def inorder_tree_walk(self, x):
         if x is not None:
@@ -82,14 +104,27 @@ class BaseTree(object):
     def tree_predecessor(self, x):
         raise NotImplemented("TBI")
 
-    def tree_height(self, x):
-        if x is None:
-            return -1
-        else:
-            return max(self.tree_height(x.left), self.tree_height(x.right)) + 1
+    def _preorder_tree_graph(self, x, G):
+        if x is not None:
+            G.add_node(x.key)
+            if x.p is not None:
+                G.add_edge(x.p.key, x.key)
+            self._preorder_tree_graph(x.left, G)
+            self._preorder_tree_graph(x.right, G)
+        return G
 
-    def print(self):
-        raise NotImplemented("TBI")
+    def draw(self, show=False):
+        # raise NotImplemented("TBI")
+        G = nx.DiGraph()
+        self._preorder_tree_graph(self.root, G)
+        if show:
+            plt.figure(figsize=(8, 8))
+            pos = graphviz_layout(G, prog='dot')
+            nx.draw(G, pos, alpha=0.8, node_color="#1F5838",
+                    with_labels=True)
+            plt.axis('equal')
+            plt.show()
+        return G
 
 
 class BinarySearchTree(BaseTree):
@@ -152,25 +187,33 @@ class AVLTree(BinarySearchTree):
 
     # @staticmethod
     def balance_factor(self, x):
-        return self.tree_height(x.left) - self.tree_height(x.right)
-        # return x.left.h - x.right.h
+        # return self.tree_height(x.left) - self.tree_height(x.right)
+        h_left, h_right = 0, 0
+        if x.left:
+            h_left = x.left.h
+        if x.right:
+            h_right = x.right.h
+        return h_left - h_right
 
     def tree_insert(self, value):
         z = AVLNode(value)
         self._tree_insert(z)
-        z.h = self.tree_height(z)
+        # z.h = self.tree_height(z)
         # Do post-balance check
         self.balance(z)
 
     def balance(self, x):
-        while x.p is not None:
+        while True:
+            if x.p is None:
+                break
             bf = self.balance_factor(x.p)
-            x.p.h = bf
+            # x.p.h = bf
             if bf <= -2:
-                self.left_rotate(x)
+                self.left_rotate(x.p)
             elif bf >= 2:
-                self.right_rotate(x)
-            x = x.p
+                self.right_rotate(x.p)
+            if x.p is not None:
+                x = x.p
 
     def left_rotate(self, x):
         y = x.right  # Set y
@@ -186,8 +229,8 @@ class AVLTree(BinarySearchTree):
             x.p.right = y
         y.left = x  # Put x on y's left
         x.p = y
-        x.h = self.tree_height(x)
-        y.h = self.tree_height(y)
+        # x.h = self.tree_height(x)
+        # y.h = self.tree_height(y)
 
     def right_rotate(self, y):
         x = y.left  # Set x
@@ -203,11 +246,13 @@ class AVLTree(BinarySearchTree):
             y.p.left = x
         x.right = y  # Put y on x's right
         y.p = x
-        x.h = self.tree_height(x)
-        y.h = self.tree_height(y)
+        # x.h = self.tree_height(x)
+        # y.h = self.tree_height(y)
 
 
 if __name__ == '__main__':
     from alg_complexity.trees import AVLTree
     keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     bst = AVLTree(keys)
+    G = bst.draw(show=True)
+
