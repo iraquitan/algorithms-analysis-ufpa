@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
+import os
 from random import randint
-
+os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
@@ -322,6 +323,24 @@ class BlackRedTree(BinarySearchTree):
         if keys is not None:
             self._add_keys(keys)
 
+    def _tree_min(self, x):
+        while x.left != self.nil:
+            x = x.left
+        return x
+
+    def _tree_max(self, x):
+        while x.right != self.nil:
+            x = x.right
+        return x
+
+    def tree_search(self, x, k):
+        if x == self.nil or k == x.key:
+            return x
+        if k < x.key:
+            return self.tree_search(x.left, k)
+        else:
+            return self.tree_search(x.right, k)
+
     def tree_insert(self, value):
         z = BlackRedNode(value)
         self._tree_insert(z)
@@ -356,12 +375,13 @@ class BlackRedTree(BinarySearchTree):
                     y.red = False
                     z.p.p.red = True
                     z = z.p.p
-                elif z == z.p.right:
-                    z = z.p
-                    self.left_rotate(z)
-                z.p.red = False
-                z.p.p.red = True
-                self.right_rotate(z.p.p)
+                else:
+                    if z == z.p.right:
+                        z = z.p
+                        self.left_rotate(z)
+                    z.p.red = False
+                    z.p.p.red = True
+                    self.right_rotate(z.p.p)
             else:
                 y = z.p.p.left
                 if y.red:
@@ -369,20 +389,103 @@ class BlackRedTree(BinarySearchTree):
                     y.red = False
                     z.p.p.red = True
                     z = z.p.p
-                elif z == z.p.left:
-                    z = z.p
-                    self.right_rotate(z)
-                z.p.red = False
-                z.p.p.red = True
-                self.left_rotate(z.p.p)
+                else:
+                    if z == z.p.left:
+                        z = z.p
+                        self.right_rotate(z)
+                    z.p.red = False
+                    z.p.p.red = True
+                    self.left_rotate(z.p.p)
         self.root.red = False
+
+    def transplant(self, u, v):
+        if u.p == self.nil:
+            self.root = v
+        elif u == u.p.left:
+            u.p.left = v
+        else:
+            u.p.right = v
+        v.p = u.p
+
+    def _tree_delete(self, z):
+        y = z
+        y_orig_color = y.red
+        if z.left == self.nil:
+            x = z.right
+            self.transplant(z, z.right)
+        elif z.right == self.nil:
+            x = z.left
+            self.transplant(z, z.left)
+        else:
+            y = self.min(z.right)
+            y_orig_color = y.red
+            x = y.right
+            if y.p == z:
+                x.p = y
+            else:
+                self.transplant(y, y.right)
+                y.right = z.right
+                y.right.p = y
+            self.transplant(z, y)
+            y.left = z.left
+            y.left.p = y
+            y.red = z.red
+        if not y_orig_color:  # If y's original color is BLACK
+            self._delete_fixup(x)
+
+    def _delete_fixup(self, x):
+        while x != self.nil and not x.red:
+            if x == x.p.left:
+                w = x.p.right
+                if w.red:
+                    w.red = False
+                    x.p.red = True
+                    self.left_rotate(x.p)
+                    w = x.p.right
+                if not w.left.red and not w.right.red:
+                    w.red = True
+                    x = x.p
+                else:
+                    if not w.right.red:
+                        w.left.red = False
+                        w.red = True
+                        self.right_rotate(w)
+                        w = x.p.right
+                    w.red = w.p.red
+                    x.p.red = False
+                    w.right.red = False
+                    self.left_rotate(x.p)
+                    x = self.nil
+            else:
+                w = x.p.left
+                if w.red:
+                    w.red = False
+                    x.p.red = True
+                    self.right_rotate(x.p)
+                    w = x.p.left
+                if not w.right.red and not w.left.red:
+                    w.red = True
+                    x = x.p
+                else:
+                    if not w.left.red:
+                        w.right.red = False
+                        w.red = True
+                        self.left_rotate(w)
+                        w = x.p.left
+                    w.red = w.p.red
+                    x.p.red = False
+                    w.left.red = False
+                    self.right_rotate(x.p)
+                    x = self.nil
+        x.red = False
+
 
     def left_rotate(self, x):
         y = x.right  # Set y
         if self.debug:
             print(f"left rotating x={x.key}, y={y.key}")
         x.right = y.left  # Turn y's left subtree into x's right subtree
-        if y.left == self.nil:
+        if y.left != self.nil:
             y.left.p = x
         y.p = x.p  # Link x's parent to y
         if x.p == self.nil:
@@ -399,7 +502,7 @@ class BlackRedTree(BinarySearchTree):
         if self.debug:
             print(f"right rotating y={y.key}, x={x.key}")
         y.left = x.right  # Turn x's right subtree into y's left subtree
-        if x.right == self.nil:
+        if x.right != self.nil:
             x.right.p = y
         x.p = y.p  # Link y's parent to x
         if y.p == self.nil:
@@ -442,8 +545,9 @@ class BlackRedTree(BinarySearchTree):
             # nx.draw_networkx_labels(G, pos, font_color='k', nodelist=self.nodes_red)
             plt.axis('equal')
             plt.show()
+        self.nodes_red = []
+        self.nodes_black = []
         return G
-
 
 
 if __name__ == '__main__':
@@ -454,9 +558,9 @@ if __name__ == '__main__':
     keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
     bst = BlackRedTree(keys, debug=True)
     G = bst.draw(show=True)
-    # for k in [20, 60, 90]:
-    #     bst.tree_delete(k)
-    #     bst.draw(show=True)
+    for k in [20, 60, 90]:
+        bst.tree_delete(k)
+        bst.draw(show=True)
 
     print()
 
