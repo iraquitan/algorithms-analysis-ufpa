@@ -140,9 +140,13 @@ class BaseTree(object):
     def tree_predecessor(self, x):
         raise NotImplemented("TBI")
 
+    @staticmethod
+    def _draw_add_node(self, G, x):
+        G.add_node(x.key)
+
     def _preorder_tree_graph(self, x, G):
         if x is not None:
-            G.add_node(x.key)
+            self._draw_add_node(G, x)
             if x.p is not None:
                 G.add_edge(x.p.key, x.key)
             self._preorder_tree_graph(x.left, G)
@@ -156,8 +160,7 @@ class BaseTree(object):
         if show:
             plt.figure(figsize=(8, 8))
             pos = graphviz_layout(G, prog='dot')
-            nx.draw(G, pos, alpha=0.8, node_color="#1F5838",
-                    with_labels=True)
+            nx.draw(G, pos, alpha=0.8, with_labels=True)
             plt.axis('equal')
             plt.show()
         return G
@@ -169,8 +172,13 @@ class BinarySearchTree(BaseTree):
         self.root = None
         self.debug = debug
         if keys is not None:
-            for k in keys:
-                self.tree_insert(k)
+            self._add_keys(keys)
+            # for k in keys:
+            #     self.tree_insert(k)
+
+    def _add_keys(self, keys):
+        for k in keys:
+            self.tree_insert(k)
 
     def tree_insert(self, value):
         z = Node(value)
@@ -305,12 +313,137 @@ class AVLTree(BinarySearchTree):
 class BlackRedTree(BinarySearchTree):
 
     def __init__(self, keys=None, debug=False):
-        super().__init__(keys, debug)
         self.nil = BlackRedNode(None)
         self.nil.red = False
+        self.root = self.nil
+        self.debug = debug
+        self.nodes_red = []
+        self.nodes_black = []
+        if keys is not None:
+            self._add_keys(keys)
 
     def tree_insert(self, value):
         z = BlackRedNode(value)
+        self._tree_insert(z)
+        self._insert_fixup(z)
+
+    def _tree_insert(self, z):
+        y = self.nil
+        x = self.root
+        while x != self.nil:
+            y = x
+            if z.key < x.key:
+                x = x.left
+            else:
+                x = x.right
+        z.p = y
+        if y == self.nil:
+            self.root = z  # Tree was empty
+        elif z.key < y.key:
+            y.left = z
+        else:
+            y.right = z
+        z.left = self.nil
+        z.right = self.nil
+        return z
+
+    def _insert_fixup(self, z):
+        while z.p.red:
+            if z.p == z.p.p.left:
+                y = z.p.p.right
+                if y.red:
+                    z.p.red = False
+                    y.red = False
+                    z.p.p.red = True
+                    z = z.p.p
+                elif z == z.p.right:
+                    z = z.p
+                    self.left_rotate(z)
+                z.p.red = False
+                z.p.p.red = True
+                self.right_rotate(z.p.p)
+            else:
+                y = z.p.p.left
+                if y.red:
+                    z.p.red = False
+                    y.red = False
+                    z.p.p.red = True
+                    z = z.p.p
+                elif z == z.p.left:
+                    z = z.p
+                    self.right_rotate(z)
+                z.p.red = False
+                z.p.p.red = True
+                self.left_rotate(z.p.p)
+        self.root.red = False
+
+    def left_rotate(self, x):
+        y = x.right  # Set y
+        if self.debug:
+            print(f"left rotating x={x.key}, y={y.key}")
+        x.right = y.left  # Turn y's left subtree into x's right subtree
+        if y.left == self.nil:
+            y.left.p = x
+        y.p = x.p  # Link x's parent to y
+        if x.p == self.nil:
+            self.root = y
+        elif x == x.p.left:
+            x.p.left = y
+        else:
+            x.p.right = y
+        y.left = x  # Put x on y's left
+        x.p = y
+
+    def right_rotate(self, y):
+        x = y.left  # Set x
+        if self.debug:
+            print(f"right rotating y={y.key}, x={x.key}")
+        y.left = x.right  # Turn x's right subtree into y's left subtree
+        if x.right == self.nil:
+            x.right.p = y
+        x.p = y.p  # Link y's parent to x
+        if y.p == self.nil:
+            self.root = x
+        elif y == y.p.right:
+            y.p.right = x
+        else:
+            y.p.left = x
+        x.right = y  # Put y on x's right
+        y.p = x
+
+    def _draw_add_node(self, G, x):
+        if x.key:
+            G.add_node(x.key, color=x.color, fillcolor=x.color)
+            if x.red:
+                self.nodes_red.append(x.key)
+            else:
+                self.nodes_black.append(x.key)
+
+    def _preorder_tree_graph(self, x, G):
+        if x != self.nil:
+            self._draw_add_node(G, x)
+            if x.p != self.nil:
+                G.add_edge(x.p.key, x.key)
+            self._preorder_tree_graph(x.left, G)
+            self._preorder_tree_graph(x.right, G)
+        return G
+
+    def draw(self, show=False):
+        G = nx.DiGraph()
+        self._preorder_tree_graph(self.root, G)
+        if show:
+            plt.figure(figsize=(8, 8))
+            pos = graphviz_layout(G, prog='dot')
+            # nx.draw(G, pos, alpha=0.8, with_labels=True, )
+            nx.draw_networkx_nodes(G, pos, node_color='k', nodelist=self.nodes_black, alpha=0.8)
+            nx.draw_networkx_nodes(G, pos, node_color='r', nodelist=self.nodes_red, alpha=0.8)
+            nx.draw_networkx_edges(G, pos)
+            nx.draw_networkx_labels(G, pos, font_color='white', nodelist=self.nodes_black)
+            # nx.draw_networkx_labels(G, pos, font_color='k', nodelist=self.nodes_red)
+            plt.axis('equal')
+            plt.show()
+        return G
+
 
 
 if __name__ == '__main__':
@@ -319,11 +452,11 @@ if __name__ == '__main__':
     # keys = {randint(0, 100) for x in range(50)}
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
     keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
-    bst = AVLTree(keys)
+    bst = BlackRedTree(keys, debug=True)
     G = bst.draw(show=True)
-    for k in [20, 60, 90]:
-        bst.tree_delete(k)
-        bst.draw(show=True)
+    # for k in [20, 60, 90]:
+    #     bst.tree_delete(k)
+    #     bst.draw(show=True)
 
     print()
 
