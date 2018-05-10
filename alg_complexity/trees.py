@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from random import randint
-# os.environ['PATH'] += ':/usr/local/bin'
+os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
@@ -445,7 +445,7 @@ class BlackRedTree(BinarySearchTree):
             self._delete_fixup(x)
 
     def _delete_fixup(self, x):
-        while x != self.nil and not x.red:
+        while x != self.root and not x.red:
             if x == x.p.left:
                 w = x.p.right
                 if w.red:
@@ -462,11 +462,11 @@ class BlackRedTree(BinarySearchTree):
                         w.red = True
                         self.right_rotate(w)
                         w = x.p.right
-                    w.red = w.p.red
+                    w.red = x.p.red
                     x.p.red = False
                     w.right.red = False
                     self.left_rotate(x.p)
-                    x = self.nil
+                    x = self.root
             else:
                 w = x.p.left
                 if w.red:
@@ -483,11 +483,11 @@ class BlackRedTree(BinarySearchTree):
                         w.red = True
                         self.left_rotate(w)
                         w = x.p.left
-                    w.red = w.p.red
+                    w.red = x.p.red
                     x.p.red = False
                     w.left.red = False
                     self.right_rotate(x.p)
-                    x = self.nil
+                    x = self.root
         x.red = False
 
     def left_rotate(self, x):
@@ -576,7 +576,7 @@ if __name__ == '__main__':
     G = bst.draw(show=True)
     # for k in [20, 60, 90]:
     for _ in range(5):
-        k = randint(0, len(keys))
+        k = randint(0, len(keys) - 1)
         del_node = bst.tree_delete(keys[k])
         if del_node:
             bst.draw(show=True)
