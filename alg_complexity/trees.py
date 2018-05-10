@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from random import randint
-os.environ['PATH'] += ':/usr/local/bin'
+# os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
@@ -407,6 +407,17 @@ class BlackRedTree(BinarySearchTree):
             u.p.right = v
         v.p = u.p
 
+    def tree_delete(self, value):
+        z = self.tree_search(self.root, value)
+        if z != self.nil:
+            if self.debug:
+                print(f"found node with value={value}, deleting.")
+            ret = self._tree_delete(z)
+            if ret:
+                return ret
+            else:
+                return z.p
+
     def _tree_delete(self, z):
         y = z
         y_orig_color = y.red
@@ -479,7 +490,6 @@ class BlackRedTree(BinarySearchTree):
                     x = self.nil
         x.red = False
 
-
     def left_rotate(self, x):
         y = x.right  # Set y
         if self.debug:
@@ -515,7 +525,7 @@ class BlackRedTree(BinarySearchTree):
         y.p = x
 
     def _draw_add_node(self, G, x):
-        if x.key:
+        if x.key is not None:
             G.add_node(x.key, color=x.color, fillcolor=x.color)
             if x.red:
                 self.nodes_red.append(x.key)
@@ -551,16 +561,25 @@ class BlackRedTree(BinarySearchTree):
 
 
 if __name__ == '__main__':
+    # TODO
+    # date: 10/05/18
+    # time: 01:24
+    # user: iraquitan
+    # DRY using self.nil on BaseTree or BinarySearchTree
+
     # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     # keys = [ord(c) for c in 'mnolkqphia']
-    # keys = {randint(0, 100) for x in range(50)}
+    keys = list({randint(0, 100) for x in range(50)})
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
-    keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
+    # keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
     bst = BlackRedTree(keys, debug=True)
     G = bst.draw(show=True)
-    for k in [20, 60, 90]:
-        bst.tree_delete(k)
-        bst.draw(show=True)
+    # for k in [20, 60, 90]:
+    for _ in range(5):
+        k = randint(0, len(keys))
+        del_node = bst.tree_delete(keys[k])
+        if del_node:
+            bst.draw(show=True)
 
     print()
 
