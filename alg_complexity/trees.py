@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+from abc import ABC, abstractmethod
 from random import randint
 os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
@@ -53,9 +54,9 @@ class AVLNode(Node):
 
 
 class BlackRedNode(Node):
-    def __init__(self, key, left=None, right=None, p=None):
+    def __init__(self, key, left=None, right=None, p=None, red=True):
         super(BlackRedNode, self).__init__(key, left, right, p)
-        self.red = True
+        self.red = red
 
     @property
     def color(self):
@@ -65,40 +66,79 @@ class BlackRedNode(Node):
         return f"Node[{self.key}, c={self.color}]"
 
 
-class BaseTree(object):
+def node_selector(node_type='Node'):
+    NODES = {
+        'BinarySearchTree': Node,
+        'AVLTree': AVLNode,
+        'BlackRedTree': BlackRedNode
+    }
+    return NODES[node_type]
 
-    # def __repr__(self):
-    #     return self.inorder_tree_walk(self.root)
+
+def nil_selector(nil_type='Node'):
+    NILS = {
+        'BinarySearchTree': None,
+        'AVLTree': None,
+        'BlackRedTree': BlackRedNode(None, red=False)
+    }
+    return NILS[nil_type]
+
+
+class BaseTree(ABC):
+
+    @abstractmethod
+    def __init__(self, keys=None, debug=False):
+        self.nil = nil_selector(self.__class__.__name__)
+        self.root = self.nil
+        self.debug = debug
+        if keys is not None:
+            self._add_keys(keys)
+            # for k in keys:
+            #     self.tree_insert(k)
+
+    def _add_keys(self, keys):
+        for k in keys:
+            self.tree_insert(k)
+
+    @abstractmethod
+    def tree_insert(self, value):
+        z = node_selector(self.__class__.__name__)(value)
+        # z = Node(value)
+        self._tree_insert(z)
+        return z
+
+    @abstractmethod
+    def _tree_insert(self, z):
+        pass
 
     def inorder_tree_walk(self, x):
-        if x is not None:
+        if x != self.nil:
             self.inorder_tree_walk(x.left)
             print(x.key)
             self.inorder_tree_walk(x.right)
 
     def preorder_tree_walk(self, x):
-        if x is not None:
+        if x != self.nil:
             print(x.key)
             self.inorder_tree_walk(x.left)
             self.inorder_tree_walk(x.right)
 
     def postorder_tree_walk(self, x):
-        if x is not None:
+        if x != self.nil:
             self.inorder_tree_walk(x.left)
             self.inorder_tree_walk(x.right)
             print(x.key)
 
     def tree_search(self, x, k):
-        if x is None or k == x.key:
+        if x == self.nil or k == x.key:
             return x
         if k < x.key:
             return self.tree_search(x.left, k)
         else:
             return self.tree_search(x.right, k)
 
-    @staticmethod
-    def ite_tree_search(x, k):
-        while x is not None and k != x.key:
+    def ite_tree_search(self, x, k):
+        while x != self.nil and k != x.key:
             if k < x.key:
                 x = x.left
             else:
@@ -111,9 +151,8 @@ class BaseTree(object):
         else:
             return self._tree_min(self.root)
 
-    @staticmethod
-    def _tree_min(x):
-        while x.left is not None:
+    def _tree_min(self, x):
+        while x.left != self.nil:
             x = x.left
         return x
 
@@ -123,17 +162,16 @@ class BaseTree(object):
         else:
             return self._tree_max(self.root)
 
-    @staticmethod
-    def _tree_max(x):
-        while x.right is not None:
+    def _tree_max(self, x):
+        while x.right != self.nil:
             x = x.right
         return x
 
     def tree_successor(self, x):
-        if x.right is not None:
+        if x.right != self.nil:
             return self.min(x.right)
         y = x.p
-        while y is not None and x == y.right:
+        while y != self.nil and x == y.right:
             x = y
             y = y.p
         return y
@@ -146,9 +184,9 @@ class BaseTree(object):
         G.add_node(x.key)
 
     def _preorder_tree_graph(self, x, G):
-        if x is not None:
+        if x != self.nil:
             self._draw_add_node(G, x)
-            if x.p is not None:
+            if x.p != self.nil:
                 G.add_edge(x.p.key, x.key)
             self._preorder_tree_graph(x.left, G)
             self._preorder_tree_graph(x.right, G)
@@ -170,32 +208,23 @@ class BaseTree(object):
 class BinarySearchTree(BaseTree):
 
     def __init__(self, keys=None, debug=False):
-        self.root = None
-        self.debug = debug
-        if keys is not None:
-            self._add_keys(keys)
-            # for k in keys:
-            #     self.tree_insert(k)
-
-    def _add_keys(self, keys):
-        for k in keys:
-            self.tree_insert(k)
+        super().__init__(keys, debug)
 
     def tree_insert(self, value):
-        z = Node(value)
-        self._tree_insert(z)
+        z = super().tree_insert(value)
+        return z
 
     def _tree_insert(self, z):
-        y = None
+        y = self.nil
         x = self.root
-        while x is not None:
+        while x != self.nil:
             y = x
             if z.key < x.key:
                 x = x.left
             else:
                 x = x.right
         z.p = y
-        if y is None:
+        if y == self.nil:
             self.root = z  # Tree was empty
         elif z.key < y.key:
             y.left = z
@@ -204,13 +233,13 @@ class BinarySearchTree(BaseTree):
         return z
 
     def transplant(self, u, v):
-        if u.p is None:
+        if u.p == self.nil:
             self.root = v
         elif u == u.p.left:
             u.p.left = v
         else:
             u.p.right = v
-        if v is not None:
+        if v != self.nil:
             v.p = u.p
 
     def tree_delete(self, value):
@@ -225,10 +254,10 @@ class BinarySearchTree(BaseTree):
                 return z.p
 
     def _tree_delete(self, z):
-        if z.left is None:
+        if z.left == self.nil:
             self.transplant(z, z.right)
             return z.right
-        elif z.right is None:
+        elif z.right == self.nil:
             self.transplant(z, z.left)
             return z.left
         else:
@@ -242,14 +271,45 @@ class BinarySearchTree(BaseTree):
             y.left.p = y
             return y.right
 
+    def left_rotate(self, x):
+        y = x.right  # Set y
+        if self.debug:
+            print(f"left rotating x={x.key}, y={y.key}")
+        x.right = y.left  # Turn y's left subtree into x's right subtree
+        if y.left != self.nil:
+            y.left.p = x
+        y.p = x.p  # Link x's parent to y
+        if x.p == self.nil:
+            self.root = y
+        elif x == x.p.left:
+            x.p.left = y
+        else:
+            x.p.right = y
+        y.left = x  # Put x on y's left
+        x.p = y
+
+    def right_rotate(self, y):
+        x = y.left  # Set x
+        if self.debug:
+            print(f"right rotating y={y.key}, x={x.key}")
+        y.left = x.right  # Turn x's right subtree into y's left subtree
+        if x.right != self.nil:
+            x.right.p = y
+        x.p = y.p  # Link y's parent to x
+        if y.p == self.nil:
+            self.root = x
+        elif y == y.p.right:
+            y.p.right = x
+        else:
+            y.p.left = x
+        x.right = y  # Put y on x's right
+        y.p = x
+
 
 class AVLTree(BinarySearchTree):
 
     def tree_insert(self, value):
-        z = AVLNode(value)
-        self._tree_insert(z)
-        # z.h = self.tree_height(z)
-        # Do post-balance check
+        z = super().tree_insert(value)
         self.balance(z)
 
     def tree_delete(self, value):
@@ -281,74 +341,16 @@ class AVLTree(BinarySearchTree):
                     self.right_rotate(z)
             z = z.p
 
-    def left_rotate(self, x):
-        y = x.right  # Set y
-        if self.debug:
-            print(f"left rotating x={x.key}, y={y.key}")
-        x.right = y.left  # Turn y's left subtree into x's right subtree
-        if y.left is not None:
-            y.left.p = x
-        y.p = x.p  # Link x's parent to y
-        if x.p is None:
-            self.root = y
-        elif x == x.p.left:
-            x.p.left = y
-        else:
-            x.p.right = y
-        y.left = x  # Put x on y's left
-        x.p = y
-
-    def right_rotate(self, y):
-        x = y.left  # Set x
-        if self.debug:
-            print(f"right rotating y={y.key}, x={x.key}")
-        y.left = x.right  # Turn x's right subtree into y's left subtree
-        if x.right is not None:
-            x.right.p = y
-        x.p = y.p  # Link y's parent to x
-        if y.p is None:
-            self.root = x
-        elif y == y.p.right:
-            y.p.right = x
-        else:
-            y.p.left = x
-        x.right = y  # Put y on x's right
-        y.p = x
-
 
 class BlackRedTree(BinarySearchTree):
 
     def __init__(self, keys=None, debug=False):
-        self.nil = BlackRedNode(None)
-        self.nil.red = False
-        self.root = self.nil
-        self.debug = debug
+        super().__init__(keys, debug)
         self.nodes_red = []
         self.nodes_black = []
-        if keys is not None:
-            self._add_keys(keys)
-
-    def _tree_min(self, x):
-        while x.left != self.nil:
-            x = x.left
-        return x
-
-    def _tree_max(self, x):
-        while x.right != self.nil:
-            x = x.right
-        return x
-
-    def tree_search(self, x, k):
-        if x == self.nil or k == x.key:
-            return x
-        if k < x.key:
-            return self.tree_search(x.left, k)
-        else:
-            return self.tree_search(x.right, k)
 
     def tree_insert(self, value):
-        z = BlackRedNode(value)
-        self._tree_insert(z)
+        z = super().tree_insert(value)
         self._insert_fixup(z)
 
     def _tree_insert(self, z):
@@ -413,15 +415,7 @@ class BlackRedTree(BinarySearchTree):
         v.p = u.p
 
     def tree_delete(self, value):
-        z = self.tree_search(self.root, value)
-        if z != self.nil:
-            if self.debug:
-                print(f"found node with value={value}, deleting.")
-            ret = self._tree_delete(z)
-            if ret:
-                return ret
-            else:
-                return z.p
+        return super().tree_delete(value)
 
     def _tree_delete(self, z):
         y = z
@@ -494,40 +488,6 @@ class BlackRedTree(BinarySearchTree):
                     self.right_rotate(x.p)
                     x = self.root
         x.red = False
-
-    def left_rotate(self, x):
-        y = x.right  # Set y
-        if self.debug:
-            print(f"left rotating x={x.key}, y={y.key}")
-        x.right = y.left  # Turn y's left subtree into x's right subtree
-        if y.left != self.nil:
-            y.left.p = x
-        y.p = x.p  # Link x's parent to y
-        if x.p == self.nil:
-            self.root = y
-        elif x == x.p.left:
-            x.p.left = y
-        else:
-            x.p.right = y
-        y.left = x  # Put x on y's left
-        x.p = y
-
-    def right_rotate(self, y):
-        x = y.left  # Set x
-        if self.debug:
-            print(f"right rotating y={y.key}, x={x.key}")
-        y.left = x.right  # Turn x's right subtree into y's left subtree
-        if x.right != self.nil:
-            x.right.p = y
-        x.p = y.p  # Link y's parent to x
-        if y.p == self.nil:
-            self.root = x
-        elif y == y.p.right:
-            y.p.right = x
-        else:
-            y.p.left = x
-        x.right = y  # Put y on x's right
-        y.p = x
 
     def _draw_add_node(self, G, x):
         if x.key is not None:
