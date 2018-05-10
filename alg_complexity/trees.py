@@ -142,7 +142,7 @@ class BaseTree(object):
         raise NotImplemented("TBI")
 
     @staticmethod
-    def _draw_add_node(self, G, x):
+    def _draw_add_node(G, x):
         G.add_node(x.key)
 
     def _preorder_tree_graph(self, x, G):
@@ -161,7 +161,7 @@ class BaseTree(object):
         if show:
             plt.figure(figsize=(8, 8))
             pos = graphviz_layout(G, prog='dot')
-            nx.draw(G, pos, alpha=0.8, with_labels=True)
+            nx.draw(G, pos, alpha=0.8, node_color='lightblue', with_labels=True)
             plt.axis('equal')
             plt.show()
         return G
@@ -232,7 +232,7 @@ class BinarySearchTree(BaseTree):
             self.transplant(z, z.left)
             return z.left
         else:
-            y = self.min(z.right)
+            y = self.min(z.right)  # Successor of z
             if y.p != z:
                 self.transplant(y, y.right)
                 y.right = z.right
@@ -240,7 +240,7 @@ class BinarySearchTree(BaseTree):
             self.transplant(z, y)
             y.left = z.left
             y.left.p = y
-            return y
+            return y.right
 
 
 class AVLTree(BinarySearchTree):
@@ -256,6 +256,7 @@ class AVLTree(BinarySearchTree):
         x = super().tree_delete(value)
         if x:
             self.balance(x)
+            return x
 
     def balance(self, z):
         # he(p) > hd(p) | he(u) > hd(u)  # rotacao a direita
@@ -268,11 +269,15 @@ class AVLTree(BinarySearchTree):
                     self.left_rotate(z)
                 elif z.right.balance_factor < 0:
                     self.left_rotate(z)
+                else:
+                    self.left_rotate(z)
             elif bf >= 2:
                 if z.left.balance_factor < 0:
                     self.left_rotate(z.left)
                     self.right_rotate(z)
                 elif z.left.balance_factor > 0:
+                    self.right_rotate(z)
+                else:
                     self.right_rotate(z)
             z = z.p
 
