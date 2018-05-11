@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from alg_complexity.trees import AVLTree, BlackRedTree
+from alg_complexity.trees import AVLTree
 
 
 if __name__ == '__main__':
