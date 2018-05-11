@@ -129,6 +129,14 @@ class BaseTree(ABC):
             self.inorder_tree_walk(x.right)
             print(x.key)
 
+    def search(self, key, mode='recursive'):
+        if mode == 'recursive':
+            return self.tree_search(self.root, key)
+        elif mode == 'iterative':
+            return self.ite_tree_search(self.root, key)
+        else:
+            raise ValueError("'mode' must be 'rec' or 'ite'")
+
     def tree_search(self, x, k):
         if x == self.nil or k == x.key:
             return x
@@ -526,12 +534,6 @@ class BlackRedTree(BinarySearchTree):
 
 
 if __name__ == '__main__':
-    # TODO
-    # date: 10/05/18
-    # time: 01:24
-    # user: iraquitan
-    # DRY using self.nil on BaseTree or BinarySearchTree
-
     # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     # keys = [ord(c) for c in 'mnolkqphia']
     keys = list({randint(0, 100) for x in range(50)})
