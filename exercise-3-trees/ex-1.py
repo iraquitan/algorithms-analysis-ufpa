@@ -7,7 +7,7 @@ import pendulum
 
 from alg_complexity import datagen
 from alg_complexity.trees import AVLTree
-from alg_complexity.utils import class_execution_time
+from alg_complexity.utils import class_execution_time, ClassExecTime
 
 if __name__ == '__main__':
     now = pendulum.now()
@@ -16,10 +16,10 @@ if __name__ == '__main__':
     spath.mkdir(parents=True)
     cfg = {
         'n_min': 10**1,
-        'n_max': 2*10**5,
+        'n_max': 10**4,
         'n_measures': 20,
-        'n_repeats': 5,
-        'n_number': 10
+        'n_repeats': 2,
+        'n_number': 5
     }
 
     sys.setrecursionlimit(cfg['n_max']*10)
@@ -31,21 +31,28 @@ if __name__ == '__main__':
     ]
 
     algorithms = [
-        ('avl-tree-rec', AVLTree, 'search', {'mode': 'recursive'}),
-        ('avl-tree-ite', AVLTree, 'search', {'mode': 'iterative'})
+        ('avl-tree-rec', {'method': 'search', 'method_kwargs': {'mode': 'recursive'}}),
+        ('avl-tree-ite', {'method': 'search', 'method_kwargs': {'mode': 'iterative'}})
     ]
     for setup in setups:
-        # fig, ax = plt.subplots(1, 1)
-        # setup_savename = f'{setup[0]}-plot-{now_str}'
-        setup_savename = '{setup[0]}-plot-{now}'.format(setup=setup,now=now_str)
-        setup_savename = str(spath.joinpath(setup_savename))
-        for alg in algorithms:
-            # print(f'Running setup={setup[0]} -- alg={alg[0]}')
-            print('Running setup={setup[0]} -- alg={alg[0]}'.format(setup=setup,alg=alg))
-            # savename = f'{setup[0]}-{alg[0]}-res-{now_str}'
-            savename = '{setup[0]}-{alg[0]}-res-{now}'.format(setup=setup,alg=alg,now=now_str)
-            savename = str(spath.joinpath(savename))
-            ns, exec_times = class_execution_time(alg[1], setup[1], alg[2],
-                                                  alg[3], -12, **cfg)
-            np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
-            np.save(savename, exec_times, allow_pickle=False)
+        # setup_savename = '{setup[0]}-plot-{now}'.format(setup=setup,
+        #                                                 now=now_str)
+        # setup_savename = str(spath.joinpath(setup_savename))
+        class_exec = ClassExecTime(AVLTree, setup[1])
+        ns, exec_times = class_exec.exec_time(-10, algorithms, **cfg)
+        savename = '{setup[0]}-res-{now}'.format(setup=setup, now=now_str)
+        savename = str(spath.joinpath(savename))
+        np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
+        np.save(savename, exec_times, allow_pickle=False)
+        np.save(savename.replace('-res', '-algs'), np.array([alg[0] for alg in algorithms]), allow_pickle=False)
+
+        # for alg in algorithms:
+        #     print('Running setup={setup[0]} -- alg={alg[0]}'.format(
+        #         setup=setup, alg=alg))
+        #     savename = '{setup[0]}-{alg[0]}-res-{now}'.format(setup=setup,
+        #                                                       alg=alg,
+        #                                                       now=now_str)
+        #     savename = str(spath.joinpath(savename))
+        #     ns, exec_times = class_exec.exec_time(-10, algorithms, **cfg)
+        #     np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
+        #     np.save(savename, exec_times, allow_pickle=False)
