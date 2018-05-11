@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from functools import partial
 from timeit import Timer
 import numpy as np
 
@@ -51,3 +52,69 @@ def class_execution_time(class_handle, datagen, method_name, method_kwargs,
         measurements = timer.repeat(n_repeats, n_number)
         execution_time[i] = np.min(measurements) / n_number
     return ns, execution_time
+
+
+class ClassExecTime:
+
+    def __init__(self, class_, datagen):
+        """"""
+        self.datagen = datagen
+        self.class_ = class_
+        self.data = None
+        self.obj = None
+
+    def class_init(self, n):
+        self.data = self.datagen(n)
+        self.obj = self.class_(self.data)
+    
+    def call_method(self, call_data, method, method_kwargs):
+        if self.data and self.obj:
+            return getattr(self.obj, method)(call_data, **method_kwargs)
+        else:
+            raise RuntimeError('Should initialize class first with '
+                               '"class_init"')
+
+    def exec_time(self, call_data, methods, n_min=100,
+                  n_max=100000, n_measures=10, n_repeats=3, n_number=10**6):
+        ns = np.linspace(n_min, n_max, n_measures, dtype=int)
+        exec_times = np.zeros((len(methods), n_measures))
+        for i, n in enumerate(ns):
+            print(f'Running for n={n}')
+            self.class_init(n)
+            for j, (_, method) in enumerate(methods):
+                timer = Timer(partial(self.call_method, call_data=call_data, **method), )
+                measurements = timer.repeat(n_repeats, n_number)
+                exec_times[j, i] = np.min(measurements) / n_number
+        return ns, exec_times
+
+
+class ExecTime:
+
+    def __init__(self, class_, datagen):
+        """"""
+        self.datagen = datagen
+        self.class_ = class_
+        self.data = None
+        self.obj = None
+
+    def set_up(self, n):
+        self.data = self.datagen(n)
+        self.obj = self.class_(self.data)
+
+    def call_method(self, call_data, method, method_kwargs):
+        if self.obj is None:
+            self.obj = self.class_()
+        return getattr(self.obj, method)(call_data, **method_kwargs)
+
+    def exec_time(self, call_data, method, n_min=100,
+                  n_max=100000, n_measures=10, n_repeats=3, n_number=10**6):
+        ns = np.linspace(n_min, n_max, n_measures, dtype=int)
+        exec_times = np.zeros(n_measures)
+        for i, n in enumerate(ns):
+            print(f'Running for n={n}')
+            # self.class_init(n)
+            timer = Timer(partial(self.call_method, call_data=call_data(n), **method), )
+            self.obj = None
+            measurements = timer.repeat(n_repeats, n_number)
+            exec_times[i] = np.min(measurements) / n_number
+        return ns, exec_times
