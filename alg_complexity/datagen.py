@@ -32,6 +32,14 @@ def integers(n, min_, max_):
     return [random.randint(min_, max_) for _ in range(n)]
 
 
+def unique_integers(n, min_, max_):
+    """ Return sequence of N random integers between min_ and max_ (included).
+    """
+    un = list({random.randint(min_, max_) for _ in range(n)})
+    random.shuffle(un)
+    return un
+
+
 def large_integers(n):
     """ Return sequence of N large random integers. """
     return [random.randint(-50, 50) * 1000000 + random.randint(0, 10000)
