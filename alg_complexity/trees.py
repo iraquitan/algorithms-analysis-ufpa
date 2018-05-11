@@ -53,9 +53,9 @@ class AVLNode(Node):
         return f"Node[{self.key}, h={self.h}]"
 
 
-class BlackRedNode(Node):
+class RedBlackNode(Node):
     def __init__(self, key, left=None, right=None, p=None, red=True):
-        super(BlackRedNode, self).__init__(key, left, right, p)
+        super(RedBlackNode, self).__init__(key, left, right, p)
         self.red = red
 
     @property
@@ -70,7 +70,7 @@ def node_selector(node_type='Node'):
     NODES = {
         'BinarySearchTree': Node,
         'AVLTree': AVLNode,
-        'BlackRedTree': BlackRedNode
+        'RedBlackTree': RedBlackNode
     }
     return NODES[node_type]
 
@@ -79,7 +79,7 @@ def nil_selector(nil_type='Node'):
     NILS = {
         'BinarySearchTree': None,
         'AVLTree': None,
-        'BlackRedTree': BlackRedNode(None, red=False)
+        'RedBlackTree': RedBlackNode(None, red=False)
     }
     return NILS[nil_type]
 
@@ -99,6 +99,7 @@ class BaseTree(ABC):
     def _add_keys(self, keys):
         for k in keys:
             self.tree_insert(k)
+        # self.root = self.nil
 
     @abstractmethod
     def tree_insert(self, value):
@@ -350,7 +351,7 @@ class AVLTree(BinarySearchTree):
             z = z.p
 
 
-class BlackRedTree(BinarySearchTree):
+class RedBlackTree(BinarySearchTree):
 
     def __init__(self, keys=None, debug=False):
         super().__init__(keys, debug)
@@ -539,7 +540,7 @@ if __name__ == '__main__':
     keys = list({randint(0, 100) for x in range(50)})
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
     # keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
-    bst = BlackRedTree(keys, debug=True)
+    bst = RedBlackTree(keys, debug=True)
     G = bst.draw(show=True)
     # for k in [20, 60, 90]:
     for _ in range(5):
