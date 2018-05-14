@@ -239,7 +239,7 @@ class BinarySearchTree(BaseTree):
             y.left = z
         else:
             y.right = z
-        return z
+        return y
 
     def transplant(self, u, v):
         if u.p == self.nil:
@@ -296,6 +296,7 @@ class BinarySearchTree(BaseTree):
             x.p.right = y
         y.left = x  # Put x on y's left
         x.p = y
+        return y
 
     def right_rotate(self, y):
         x = y.left  # Set x
@@ -313,13 +314,68 @@ class BinarySearchTree(BaseTree):
             y.p.left = x
         x.right = y  # Put y on x's right
         y.p = x
+        return x
 
 
 class AVLTree(BinarySearchTree):
 
     def tree_insert(self, value):
+        # z = node_selector(self.__class__.__name__)(value)
+        # if self.root:
+        #     x = self.root
+        #     x = self._tree_insert(self.root, z)
+        # else:
+        #     self.root = z
+        #
+        if self.debug:
+            print(f'Inserting value {value}')
         z = super().tree_insert(value)
-        self.balance(z)
+        node_to_rebalance = None
+        if z.h == 1:
+            node = z
+            while node:
+                if not node.balance_factor in [-1, 0, 1]:
+                    node_to_rebalance = node
+                    break  # we need the one that is furthest from the root
+                node = node.p
+        if node_to_rebalance:
+            self.balance2(z)
+
+    # def _tree_insert(self, x, z):
+    #     node_to_rebalance = None
+    #     if x == self.nil:
+    #     # if not x:
+    #     #     self.root = z
+    #         return z
+    #     elif z.key < x.key:
+    #         # x.left = self._tree_insert(x.left, z)
+    #         y = self._tree_insert(x.left, z)
+    #         x.left = y
+    #         y.p = x
+    #     else:
+    #         # x.right = self._tree_insert(x.right, z)
+    #         y = self._tree_insert(x.right, z)
+    #         x.right = y
+    #         y.p = x
+    #     x = self.balance2(x)
+    #     return x
+
+        # y = self.nil
+        # x = self.root
+        # while x != self.nil:
+        #     y = x
+        #     if z.key < x.key:
+        #         x = x.left
+        #     else:
+        #         x = x.right
+        # z.p = y
+        # if y == self.nil:
+        #     self.root = z  # Tree was empty
+        # elif z.key < y.key:
+        #     y.left = z
+        # else:
+        #     y.right = z
+        # return z
 
     def tree_delete(self, value):
         x = super().tree_delete(value)
@@ -331,24 +387,49 @@ class AVLTree(BinarySearchTree):
         # he(p) > hd(p) | he(u) > hd(u)  # rotacao a direita
         # he(p) > hd(p) | hd(u) > he(u)  # rotacao dupla a direita
         while z:
+            if self.debug:
+                print(f"z={z}, z.p={z.p}")
             bf = z.balance_factor
             if bf <= -2:
                 if z.right.balance_factor > 0:
                     self.right_rotate(z.right)
-                    self.left_rotate(z)
-                elif z.right.balance_factor < 0:
-                    self.left_rotate(z)
-                else:
-                    self.left_rotate(z)
+                self.left_rotate(z)
             elif bf >= 2:
                 if z.left.balance_factor < 0:
                     self.left_rotate(z.left)
-                    self.right_rotate(z)
-                elif z.left.balance_factor > 0:
-                    self.right_rotate(z)
-                else:
-                    self.right_rotate(z)
+                self.right_rotate(z)
             z = z.p
+
+    def balance2(self, z):
+        bf = z.balance_factor
+        if abs(bf) <= 1:
+            return z
+        elif bf < 0:
+            if z.right.balance_factor > 0:
+                self.right_rotate(z.right)
+            return self.left_rotate(z)
+        else:
+            if z.left.balance_factor < 0:
+                self.left_rotate(z.left)
+            return self.right_rotate(z)
+
+    def balance3(self, z):
+        p = z.p
+
+        bf = z.balance_factor
+        if abs(bf) <= 1:
+            return z
+        elif bf < 0:
+            if z.right.balance_factor > 0:
+                self.right_rotate(z.right)
+            self.left_rotate(z)
+        else:
+            if z.left.balance_factor < 0:
+                self.left_rotate(z.left)
+            self.right_rotate(z)
+        if p != self.nil:
+            self.balance3(p)
+
 
 
 class RedBlackTree(BinarySearchTree):
@@ -537,17 +618,18 @@ class RedBlackTree(BinarySearchTree):
 if __name__ == '__main__':
     # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     # keys = [ord(c) for c in 'mnolkqphia']
-    keys = list({randint(0, 100) for x in range(50)})
+    n = 10000
+    # keys = list({randint(0, n*4) for x in range(n)})
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
-    # keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
-    bst = RedBlackTree(keys, debug=True)
+    keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
+    bst = AVLTree(keys, debug=True)
     G = bst.draw(show=True)
     # for k in [20, 60, 90]:
-    for _ in range(5):
-        k = randint(0, len(keys) - 1)
-        del_node = bst.tree_delete(keys[k])
-        if del_node:
-            bst.draw(show=True)
+    # for _ in range(5):
+    #     k = randint(0, len(keys) - 1)
+    #     del_node = bst.tree_delete(keys[k])
+    #     if del_node:
+    #         bst.draw(show=True)
 
     print()
 
