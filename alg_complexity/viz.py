@@ -11,11 +11,11 @@ ALGS = ['quicksort-mid', 'quicksort-rand', 'heapsort-ite', 'heapsort-rec']
 # ALGS = ['quicksort-mid', 'quicksort-rand']
 
 
-def plot_results(res_path, show=False):
+def plot_results(res_path, setups, algs, show=False):
     p = Path(res_path)
-    for s in SETUPS:
+    for s in setups:
         fig, ax = plt.subplots(1, 1)
-        for a in ALGS:
+        for a in algs:
             files = list(p.glob('**/*{s}*{a}*.npy'.format(s=s, a=a)))
             if len(files) == 0:
                 continue
