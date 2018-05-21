@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 from pathlib import Path
+from random import choice
 
 import numpy as np
 import pendulum
@@ -16,7 +17,7 @@ if __name__ == '__main__':
     spath.mkdir(parents=True)
     cfg = {
         'n_min': 10**1,
-        'n_max': 10**4,
+        'n_max': 2*10**5,
         'n_measures': 20,
         'n_repeats': 5,
         'n_number': 10
@@ -31,8 +32,17 @@ if __name__ == '__main__':
     ]
 
     algorithms = [
-        # ('avl-tree-insert', AVLTree, {'method': '_add_keys', 'method_kwargs': {}}),
+        ('avl-tree-insert', AVLTree, {'method': '_add_keys', 'method_kwargs': {}}),
         ('rb-tree-insert', RedBlackTree, {'method': '_add_keys', 'method_kwargs': {}})
+    ]
+    algorithms_2 = [
+        ('avl-tree-delete', AVLTree, {'method': 'tree_delete', 'method_kwargs': {}}),
+        ('rb-tree-delete', RedBlackTree, {'method': 'tree_delete', 'method_kwargs': {}})
+    ]
+
+    algorithms_3 = [
+        ('avl-tree-search', AVLTree, {'method': 'search', 'method_kwargs': {}}),
+        ('rb-tree-search', RedBlackTree, {'method': 'search', 'method_kwargs': {}})
     ]
     for setup in setups:
         for alg in algorithms:
@@ -44,5 +54,29 @@ if __name__ == '__main__':
                                                               now=now_str)
             savename = str(spath.joinpath(savename))
             ns, exec_times = class_exec.exec_time(setup[1], alg[-1], **cfg)
+            np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
+            np.save(savename, exec_times, allow_pickle=False)
+
+        for alg in algorithms_2:
+            class_exec = ClassExecTime(alg[1], setup[1])
+            print('Running setup={setup[0]} -- alg={alg[0]}'.format(
+                setup=setup, alg=alg))
+            savename = '{setup[0]}-{alg[0]}-res-{now}'.format(setup=setup,
+                                                              alg=alg,
+                                                              now=now_str)
+            savename = str(spath.joinpath(savename))
+            ns, exec_times = class_exec.exec_time(choice, alg[-1], **cfg)
+            np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
+            np.save(savename, exec_times, allow_pickle=False)
+
+        for alg in algorithms_3:
+            class_exec = ClassExecTime(alg[1], setup[1])
+            print('Running setup={setup[0]} -- alg={alg[0]}'.format(
+                setup=setup, alg=alg))
+            savename = '{setup[0]}-{alg[0]}-res-{now}'.format(setup=setup,
+                                                              alg=alg,
+                                                              now=now_str)
+            savename = str(spath.joinpath(savename))
+            ns, exec_times = class_exec.exec_time(-99, alg[-1], **cfg)
             np.save(savename.replace('-res', '-times'), ns, allow_pickle=False)
             np.save(savename, exec_times, allow_pickle=False)
