@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
+import warnings
 from abc import ABC, abstractmethod
-from random import randint
+
 os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
+
+warnings.filterwarnings("ignore")
 
 
 class Node(object):
@@ -22,6 +25,41 @@ class Node(object):
 class AVLNode(Node):
     def __init__(self, key, left=None, right=None, p=None):
         super(AVLNode, self).__init__(key, left, right, p)
+        self.h = 0
+
+    @property
+    def is_leaf(self):
+        return self.left is None and self.right is None
+
+    def height(self):
+        left_h, right_h = 0, 0
+        if self is None:
+            return -1
+        if self.left:
+            left_h = self.left.h
+        if self.right:
+            right_h = self.right.h
+        return max(left_h, right_h) + 1
+
+    @property
+    def balance_factor(self):
+        h_left, h_right = 0, 0
+        if self.left:
+            h_left = self.left.h
+        if self.right:
+            h_right = self.right.h
+        return h_left - h_right
+
+    def update_height(self):
+        self.h = self.height()
+
+    def __repr__(self):
+        return f"Node[{self.key}, h={self.h}]"
+
+
+class AVLNode2(Node):
+    def __init__(self, key, left=None, right=None, p=None):
+        super(AVLNode2, self).__init__(key, left, right, p)
 
     @property
     def is_leaf(self):
@@ -103,8 +141,9 @@ class BaseTree(ABC):
 
     @abstractmethod
     def tree_insert(self, value):
+        if self.debug:
+            print(f'Inserting value {value}')
         z = node_selector(self.__class__.__name__)(value)
-        # z = Node(value)
         self._tree_insert(z)
         return z
 
@@ -136,10 +175,18 @@ class BaseTree(ABC):
         elif mode == 'iterative':
             return self.ite_tree_search(self.root, key)
         else:
-            raise ValueError("'mode' must be 'rec' or 'ite'")
+            raise ValueError("'mode' must be 'recursive' or 'iterative'")
 
     def tree_search(self, x, k):
-        if x == self.nil or k == x.key:
+        # if x == self.nil or k == x.key:
+        #     return x
+        if x == self.nil:
+            if self.debug:
+                print(f"Key {k} not found.")
+            return x
+        if k == x.key:
+            if self.debug:
+                print(f"Key {k} found.")
             return x
         if k < x.key:
             return self.tree_search(x.left, k)
@@ -253,9 +300,9 @@ class BinarySearchTree(BaseTree):
 
     def tree_delete(self, value):
         z = self.tree_search(self.root, value)
-        if z:
+        if z != self.nil:
             if self.debug:
-                print(f"found node with value={value}, deleting.")
+                print(f"Deleting key {value}.")
             ret = self._tree_delete(z)
             if ret:
                 return ret
@@ -283,7 +330,7 @@ class BinarySearchTree(BaseTree):
     def left_rotate(self, x):
         y = x.right  # Set y
         if self.debug:
-            print(f"left rotating x={x.key}, y={y.key}")
+            print(f"\tleft rotating x={x.key}, y={y.key}")
         x.right = y.left  # Turn y's left subtree into x's right subtree
         if y.left != self.nil:
             y.left.p = x
@@ -301,7 +348,7 @@ class BinarySearchTree(BaseTree):
     def right_rotate(self, y):
         x = y.left  # Set x
         if self.debug:
-            print(f"right rotating y={y.key}, x={x.key}")
+            print(f"\tright rotating y={y.key}, x={x.key}")
         y.left = x.right  # Turn x's right subtree into y's left subtree
         if x.right != self.nil:
             x.right.p = y
@@ -320,62 +367,20 @@ class BinarySearchTree(BaseTree):
 class AVLTree(BinarySearchTree):
 
     def tree_insert(self, value):
-        # z = node_selector(self.__class__.__name__)(value)
-        # if self.root:
-        #     x = self.root
-        #     x = self._tree_insert(self.root, z)
-        # else:
-        #     self.root = z
-        #
-        if self.debug:
-            print(f'Inserting value {value}')
         z = super().tree_insert(value)
-        node_to_rebalance = None
-        if z.h == 1:
-            node = z
-            while node:
-                if not node.balance_factor in [-1, 0, 1]:
-                    node_to_rebalance = node
-                    break  # we need the one that is furthest from the root
-                node = node.p
-        if node_to_rebalance:
-            self.balance2(z)
+        self.balance(z)
 
-    # def _tree_insert(self, x, z):
-    #     node_to_rebalance = None
-    #     if x == self.nil:
-    #     # if not x:
-    #     #     self.root = z
-    #         return z
-    #     elif z.key < x.key:
-    #         # x.left = self._tree_insert(x.left, z)
-    #         y = self._tree_insert(x.left, z)
-    #         x.left = y
-    #         y.p = x
-    #     else:
-    #         # x.right = self._tree_insert(x.right, z)
-    #         y = self._tree_insert(x.right, z)
-    #         x.right = y
-    #         y.p = x
-    #     x = self.balance2(x)
-    #     return x
+    def left_rotate(self, x):
+        y = super().left_rotate(x)
+        y.left.update_height()
+        y.update_height()
+        return y
 
-        # y = self.nil
-        # x = self.root
-        # while x != self.nil:
-        #     y = x
-        #     if z.key < x.key:
-        #         x = x.left
-        #     else:
-        #         x = x.right
-        # z.p = y
-        # if y == self.nil:
-        #     self.root = z  # Tree was empty
-        # elif z.key < y.key:
-        #     y.left = z
-        # else:
-        #     y.right = z
-        # return z
+    def right_rotate(self, y):
+        x = super().right_rotate(y)
+        x.right.update_height()
+        x.update_height()
+        return x
 
     def tree_delete(self, value):
         x = super().tree_delete(value)
@@ -384,11 +389,8 @@ class AVLTree(BinarySearchTree):
             return x
 
     def balance(self, z):
-        # he(p) > hd(p) | he(u) > hd(u)  # rotacao a direita
-        # he(p) > hd(p) | hd(u) > he(u)  # rotacao dupla a direita
         while z:
-            if self.debug:
-                print(f"z={z}, z.p={z.p}")
+            z.update_height()
             bf = z.balance_factor
             if bf <= -2:
                 if z.right.balance_factor > 0:
@@ -429,7 +431,6 @@ class AVLTree(BinarySearchTree):
             self.right_rotate(z)
         if p != self.nil:
             self.balance3(p)
-
 
 
 class RedBlackTree(BinarySearchTree):
@@ -618,18 +619,20 @@ class RedBlackTree(BinarySearchTree):
 if __name__ == '__main__':
     # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     # keys = [ord(c) for c in 'mnolkqphia']
-    n = 10000
+    # n = 1500
     # keys = list({randint(0, n*4) for x in range(n)})
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
     keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
     bst = AVLTree(keys, debug=True)
+    # bst = RedBlackTree(keys, debug=True)
     G = bst.draw(show=True)
-    # for k in [20, 60, 90]:
-    # for _ in range(5):
+    for k in [20, 60, 90]:
+    # for _ in range(20):
     #     k = randint(0, len(keys) - 1)
     #     del_node = bst.tree_delete(keys[k])
-    #     if del_node:
-    #         bst.draw(show=True)
+        del_node = bst.tree_delete(k)
+        if del_node:
+            bst.draw(show=True)
 
     print()
 
