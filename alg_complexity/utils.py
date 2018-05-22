@@ -69,22 +69,28 @@ class ClassExecTime:
     
     def call_method(self, call_data, method, method_kwargs):
         if self.data and self.obj:
-            return getattr(self.obj, method)(call_data, **method_kwargs)
+            if callable(call_data):
+                return getattr(self.obj, method)(call_data(self.data),
+                                                 **method_kwargs)
+            else:
+                return getattr(self.obj, method)(call_data, **method_kwargs)
         else:
             raise RuntimeError('Should initialize class first with '
                                '"class_init"')
 
-    def exec_time(self, call_data, methods, n_min=100,
+    def exec_time(self, call_data, method, n_min=100,
                   n_max=100000, n_measures=10, n_repeats=3, n_number=10**6):
         ns = np.linspace(n_min, n_max, n_measures, dtype=int)
-        exec_times = np.zeros((len(methods), n_measures))
+        # exec_times = np.zeros((len(methods), n_measures))
+        exec_times = np.zeros(n_measures)
         for i, n in enumerate(ns):
             print(f'Running for n={n}')
             self.class_init(n)
-            for j, (_, method) in enumerate(methods):
-                timer = Timer(partial(self.call_method, call_data=call_data, **method), )
-                measurements = timer.repeat(n_repeats, n_number)
-                exec_times[j, i] = np.min(measurements) / n_number
+            # for j, (_, method) in enumerate(methods):
+            timer = Timer(partial(self.call_method, call_data=call_data, **method), )
+            measurements = timer.repeat(n_repeats, n_number)
+            # exec_times[j, i] = np.min(measurements) / n_number
+            exec_times[i] = np.min(measurements) / n_number
         return ns, exec_times
 
 
