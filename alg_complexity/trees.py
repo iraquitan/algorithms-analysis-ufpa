@@ -2,6 +2,8 @@
 import os
 import warnings
 from abc import ABC, abstractmethod
+from pathlib import Path
+from random import randint
 
 os.environ['PATH'] += ':/usr/local/bin'
 import networkx as nx
@@ -248,17 +250,21 @@ class BaseTree(ABC):
             self._preorder_tree_graph(x.right, G)
         return G
 
-    def draw(self, show=False):
-        # raise NotImplemented("TBI")
+    def draw(self):
         G = nx.DiGraph()
         self._preorder_tree_graph(self.root, G)
-        if show:
-            plt.figure(figsize=(8, 8))
-            pos = graphviz_layout(G, prog='dot')
-            nx.draw(G, pos, alpha=0.8, node_color='lightblue', with_labels=True)
-            plt.axis('equal')
-            plt.show()
         return G
+
+    def plot(self, show=False):
+        G = self.draw()
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        pos = graphviz_layout(G, prog='dot')
+        nx.draw(G, pos, alpha=0.8, node_color='lightblue', with_labels=True,
+                ax=ax)
+        ax.axis('equal')
+        if show:
+            plt.show()
+        return fig
 
 
 class BinarySearchTree(BaseTree):
@@ -597,42 +603,41 @@ class RedBlackTree(BinarySearchTree):
             self._preorder_tree_graph(x.right, G)
         return G
 
-    def draw(self, show=False):
-        G = nx.DiGraph()
-        self._preorder_tree_graph(self.root, G)
+    def plot(self, show=False, save=False):
+        G = self.draw()
+        fig, ax = plt.subplots(1, 1, figsize=(8, 8))
+        pos = graphviz_layout(G, prog='dot')
+        nx.draw_networkx_nodes(G, pos, node_color='k',
+                               nodelist=self.nodes_black, alpha=0.8, ax=ax)
+        nx.draw_networkx_nodes(G, pos, node_color='r', nodelist=self.nodes_red,
+                               alpha=0.8, ax=ax)
+        nx.draw_networkx_edges(G, pos, ax=ax)
+        nx.draw_networkx_labels(G, pos, font_color='white',
+                                nodelist=self.nodes_black, ax=ax)
+        ax.axis('equal')
         if show:
-            plt.figure(figsize=(8, 8))
-            pos = graphviz_layout(G, prog='dot')
-            # nx.draw(G, pos, alpha=0.8, with_labels=True, )
-            nx.draw_networkx_nodes(G, pos, node_color='k', nodelist=self.nodes_black, alpha=0.8)
-            nx.draw_networkx_nodes(G, pos, node_color='r', nodelist=self.nodes_red, alpha=0.8)
-            nx.draw_networkx_edges(G, pos)
-            nx.draw_networkx_labels(G, pos, font_color='white', nodelist=self.nodes_black)
-            # nx.draw_networkx_labels(G, pos, font_color='k', nodelist=self.nodes_red)
-            plt.axis('equal')
             plt.show()
         self.nodes_red = []
         self.nodes_black = []
-        return G
+        return fig
 
 
 if __name__ == '__main__':
     # keys = [2, 5, 9, 12, 13, 15, 17, 18, 19]
     # keys = [ord(c) for c in 'mnolkqphia']
-    # n = 1500
-    # keys = list({randint(0, n*4) for x in range(n)})
+    n = 60
+    keys = list({randint(0, n*4) for x in range(n)})
+    # keys = list(range(n))
+    # keys.reverse()
     # keys = [10, 6, 15, 3, 7, 17, 2, 4, 5]
-    keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
-    bst = AVLTree(keys, debug=True)
-    # bst = RedBlackTree(keys, debug=True)
-    G = bst.draw(show=True)
-    for k in [20, 60, 90]:
-    # for _ in range(20):
-    #     k = randint(0, len(keys) - 1)
-    #     del_node = bst.tree_delete(keys[k])
-        del_node = bst.tree_delete(k)
+    # keys = [10, 20, 30, 5, 3, 50, 40, 70, 60, 90]
+    # bst = AVLTree(keys, debug=True)
+    bst = RedBlackTree(keys, debug=True)
+    fig = bst.plot(show=True)
+    # for k in [20, 60, 90]:
+    for _ in range(20):
+        k = randint(0, len(keys) - 1)
+        del_node = bst.tree_delete(keys[k])
+    #     del_node = bst.tree_delete(k)
         if del_node:
-            bst.draw(show=True)
-
-    print()
-
+            bst.plot(show=True)
