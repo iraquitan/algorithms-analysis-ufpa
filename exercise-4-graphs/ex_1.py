@@ -63,5 +63,9 @@ if __name__ == '__main__':
     nx.draw_networkx_labels(G, pos)
     plt.show()
 
+    print(nx.dijkstra_predecessor_and_distance(G, 'a1'))
+    print(nx.dijkstra_predecessor_and_distance(G, 'a2'))
+    print(nx.dijkstra_predecessor_and_distance(G, 'a3'))
+
     print(G)
 
