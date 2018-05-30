@@ -11,8 +11,9 @@ def get_shortest_paths_distances(graph, pairs, edge_weight_name):
     """
     distances = {}
     for pair in pairs:
-        distances[pair] = nx.dijkstra_path_length(graph, pair[0], pair[1],
-                                                  weight=edge_weight_name)
+        distances[pair] = nx.dijkstra_path_length(
+            graph, pair[0], pair[1], weight=edge_weight_name
+        )
     return distances
 
 
@@ -29,8 +30,8 @@ def create_complete_graph(pair_weights, flip_weights=True):
     """
     g = nx.Graph()
     for k, v in pair_weights.items():
-        wt_i = - v if flip_weights else v
-        g.add_edge(k[0], k[1], attr_dict={'distance': v, 'weight': wt_i})
+        wt_i = -v if flip_weights else v
+        g.add_edge(k[0], k[1], attr_dict={"distance": v, "weight": wt_i})
     return g
 
 
@@ -48,10 +49,14 @@ def add_augmenting_path_to_graph(graph, min_weight_pairs):
     # edges
     graph_aug = nx.MultiGraph(graph.copy())
     for pair in min_weight_pairs:
-        graph_aug.add_edge(pair[0],
-                           pair[1],
-                           attr_dict={'distance': nx.dijkstra_path_length(graph, pair[0], pair[1]),
-                                      'trail': 'augmented'})
+        graph_aug.add_edge(
+            pair[0],
+            pair[1],
+            attr_dict={
+                "distance": nx.dijkstra_path_length(graph, pair[0], pair[1]),
+                "trail": "augmented",
+            },
+        )
     return graph_aug
 
 
@@ -64,12 +69,14 @@ def cpp(G, debug=False):
     odd_nodes_pairs = itertools.combinations(odd_nodes)
     if debug:
         print(f"Number of odd nodes pairs = {len(odd_nodes_pairs)}")
-    odd_nodes_pairs_shortest_paths = get_shortest_paths_distances(G, odd_nodes,
-                                                                  "distance")
+    odd_nodes_pairs_shortest_paths = get_shortest_paths_distances(
+        G, odd_nodes, "distance"
+    )
 
     # Generate the complete graph
-    g_odd_complete = create_complete_graph(odd_nodes_pairs_shortest_paths,
-                                           flip_weights=True)
+    g_odd_complete = create_complete_graph(
+        odd_nodes_pairs_shortest_paths, flip_weights=True
+    )
     if debug:
         print("Complete graph of odd nodes:")
         print(f"\tNumber of nodes: {len(g_odd_complete.nodes())}")
@@ -78,14 +85,14 @@ def cpp(G, debug=False):
     # Compute min weight matching
     # Note: max_weight_matching uses the 'weight' attribute by default as the
     # attribute to maximize
-    odd_matching_dupes = nx.algorithms.max_weight_matching(g_odd_complete,
-                                                           True)
+    odd_matching_dupes = nx.algorithms.max_weight_matching(g_odd_complete, True)
     if debug:
         print(f"Number of edges in matching: {len(odd_matching_dupes)}")
 
     # Convert matching to list of deduped tuples
-    odd_matching = list(pd.unique(
-        [tuple(sorted([k, v])) for k, v in odd_matching_dupes.items()]))
+    odd_matching = list(
+        pd.unique([tuple(sorted([k, v])) for k, v in odd_matching_dupes.items()])
+    )
     if debug:
         print(f"Number of edges in matching (deduped): {len(odd_matching)}")
 
