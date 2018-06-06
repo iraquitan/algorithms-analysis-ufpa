@@ -60,17 +60,65 @@ def add_augmenting_path_to_graph(graph, min_weight_pairs):
     return graph_aug
 
 
-def cpp(G, debug=False):
+def create_eulerian_circuit(
+    graph_augmented, graph_original, starting_node=None, debug=False
+):
+    """Create the eulerian path using only edges from the original graph."""
+    euler_circuit = []
+    naive_circuit = list(nx.eulerian_circuit(graph_augmented, source=starting_node))
+
+    for edge in naive_circuit:
+        edge_data = graph_augmented.get_edge_data(edge[0], edge[1])
+
+        if edge_data[0].get("trail", "original") != "augmented":
+        # if edge_data[0]["trail"] != "augmented":
+            # If `edge` exists in original graph, grab the edge attributes and
+            # add to eulerian circuit.
+            edge_att = graph_original[edge[0]][edge[1]]
+            euler_circuit.append((edge[0], edge[1], edge_att))
+        else:
+            aug_path = nx.shortest_path(
+                graph_original, edge[0], edge[1], weight="distance"
+            )
+            aug_path_pairs = list(zip(aug_path[:-1], aug_path[1:]))
+
+            if debug:
+                print(f"Filling in edges for augmented edge: {edge}")
+                print(f"\tAugmenting path: {' => '.join(aug_path)}")
+                print(f"\tAugmenting path pairs: {aug_path_pairs}\n")
+
+            # If `edge` does not exist in original graph, find the shortest
+            # path between its nodes and add the edge attributes for each link
+            # in the shortest path.
+            for edge_aug in aug_path_pairs:
+                edge_aug_att = graph_original[edge_aug[0]][edge_aug[1]]
+                euler_circuit.append((edge_aug[0], edge_aug[1], edge_aug_att))
+
+    return euler_circuit
+
+
+def cpp(G, source=None, debug=False):
+    if nx.is_eulerian(G):
+        euler_circuit = list(nx.eulerian_circuit(G, source=source))
+        if debug:
+            print("Graph is eulerian")
+            print(f"Length of Eulerian circuit: {len(euler_circuit)}")
+            print("Eulerian circuit:")
+            for i, edge in enumerate(euler_circuit):
+                print(f"\t{i}: {edge}")
+        return euler_circuit
+
     odd_nodes = [v for v, d in nx.degree(G) if d % 2 == 1]
     if debug:
         print("Original graph:")
-        print(f"\tNumber of nodes = {len(G.number_of_nodes())}")
+        print(f"\tNumber of nodes = {G.number_of_nodes()}")
         print(f"\tNumber of nodes with odd degree = {len(odd_nodes)}")
-    odd_nodes_pairs = itertools.combinations(odd_nodes)
+
+    odd_nodes_pairs = list(itertools.combinations(odd_nodes, 2))
     if debug:
         print(f"Number of odd nodes pairs = {len(odd_nodes_pairs)}")
     odd_nodes_pairs_shortest_paths = get_shortest_paths_distances(
-        G, odd_nodes, "distance"
+        G, odd_nodes_pairs, "distance"
     )
 
     # Generate the complete graph
@@ -87,17 +135,29 @@ def cpp(G, debug=False):
     # attribute to maximize
     odd_matching_dupes = nx.algorithms.max_weight_matching(g_odd_complete, True)
     if debug:
-        print(f"Number of edges in matching: {len(odd_matching_dupes)}")
+        print("Computing Min Weight Matching:")
+        print(f"\tNumber of edges in matching: {len(odd_matching_dupes)}")
 
     # Convert matching to list of deduped tuples
     odd_matching = list(
-        pd.unique([tuple(sorted([k, v])) for k, v in odd_matching_dupes.items()])
+        pd.unique([tuple(sorted([k, v])) for k, v in odd_matching_dupes])
     )
     if debug:
-        print(f"Number of edges in matching (deduped): {len(odd_matching)}")
+        print("Removing dupes from matchings:")
+        print(f"\tNumber of edges in matching (deduped): {len(odd_matching)}")
 
     # Create augmented graph: add the min weight matching edges to g
     G_aug = add_augmenting_path_to_graph(G, odd_matching)
     if debug:
-        print(f"Number of edges in original graph: {len(G.edges())}")
-        print(f"Number of edges in augmented graph: {len(G_aug.edges())}")
+        print("Augmented Graph:")
+        print(f"\tNumber of edges in original graph: {len(G.edges())}")
+        print(f"\tNumber of edges in augmented graph: {len(G_aug.edges())}")
+
+    euler_circuit = create_eulerian_circuit(G_aug, G, starting_node=source, debug=debug)
+    if debug:
+        print(f"Length of Eulerian circuit: {len(euler_circuit)}")
+        print("Eulerian circuit:")
+        for i, edge in enumerate(euler_circuit):
+            print(f"\t{i}: {edge}")
+
+    return euler_circuit
