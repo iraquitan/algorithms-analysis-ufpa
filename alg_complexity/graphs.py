@@ -74,6 +74,7 @@ def create_eulerian_circuit(
     euler_circuit = []
     naive_circuit = list(nx.eulerian_circuit(graph_augmented, source=starting_node))
 
+    repeat = 0
     for edge in naive_circuit:
         edge_data = graph_augmented.get_edge_data(edge[0], edge[1])
 
@@ -86,23 +87,29 @@ def create_eulerian_circuit(
             edge_att = graph_original[edge[0]][edge[1]]
             euler_circuit.append((edge[0], edge[1], edge_att))
         else:
-            aug_path = nx.shortest_path(
-                # graph_original, edge[0], edge[1], weight="distance"
-                graph_original, edge[0], edge[1], weight="weight"
-            )
-            aug_path_pairs = list(zip(aug_path[:-1], aug_path[1:]))
+            if repeat == 0:
+                edge_att = graph_original[edge[0]][edge[1]]
+                euler_circuit.append((edge[0], edge[1], edge_att))
+                repeat += 1
+            else:
+                aug_path= nx.shortest_path(
+                    # graph_original, edge[0], edge[1], weight="distance"
+                    graph_original, edge[0], edge[1], weight="weight"
+                )
+                aug_path_pairs = list(zip(aug_path[:-1], aug_path[1:]))
 
-            if debug:
-                print(f"Filling in edges for augmented edge: {edge}")
-                print(f"\tAugmenting path: {' => '.join(aug_path)}")
-                print(f"\tAugmenting path pairs: {aug_path_pairs}\n")
+                if debug:
+                    print(f"Filling in edges for augmented edge: {edge}")
+                    print(f"\tAugmenting path: {' => '.join(aug_path)}")
+                    print(f"\tAugmenting path pairs: {aug_path_pairs}\n")
 
-            # If `edge` does not exist in original graph, find the shortest
-            # path between its nodes and add the edge attributes for each link
-            # in the shortest path.
-            for edge_aug in aug_path_pairs:
-                edge_aug_att = graph_original[edge_aug[0]][edge_aug[1]]
-                euler_circuit.append((edge_aug[0], edge_aug[1], edge_aug_att))
+                # If `edge` does not exist in original graph, find the shortest
+                # path between its nodes and add the edge attributes for each link
+                # in the shortest path.
+                for edge_aug in aug_path_pairs:
+                    edge_aug_att = graph_original[edge_aug[0]][edge_aug[1]]
+                    euler_circuit.append((edge_aug[0], edge_aug[1], edge_aug_att))
+                repeat = 0
 
     return euler_circuit
 
@@ -218,6 +225,7 @@ def animate_circuit(euler_circuit):
 
         # Full graph (faded in background)
         nx.draw_networkx(g_cpp, pos=node_positions, node_size=6, node_color='gray', with_labels=False, alpha=0.07)
+        nx.draw_networkx_labels(g_cpp, pos=node_positions, )
 
         # Edges walked as of iteration i
         euler_circuit_i = copy.deepcopy(euler_circuit[0:i])
@@ -228,6 +236,8 @@ def animate_circuit(euler_circuit):
         g_i_edge_colors = [visit_colors[e[2]['visits_i']] for e in g_i.edges(data=True)]
 
         nx.draw_networkx_nodes(g_i, pos=node_positions, node_size=6, alpha=0.6, node_color='lightgray', with_labels=False, linewidths=0.1)
+        # nx.draw_network_nodes(g_i, pos=node_positions, node_size=20, alpha=0.6, node_color='lightgray', with_labels=True, linewidths=0.1)
+        # nx.draw_networkx_labels(g_i, pos=node_positions)
         nx.draw_networkx_edges(g_i, pos=node_positions, edge_color=g_i_edge_colors, alpha=0.8)
 
         plt.axis('off')

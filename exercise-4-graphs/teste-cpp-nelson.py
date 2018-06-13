@@ -93,6 +93,7 @@ def make_circuit_video(image_path, movie_filename, fps=5):
 
 
 if __name__ == '__main__':
+    os.environ["PATH"] += ":/usr/local/bin"
     """
     Algoritmo Hungaro ou de Fluxo
     """
@@ -132,5 +133,5 @@ if __name__ == '__main__':
         # print(f"{a} -> {b}")
         s += w["weight"]
     print(f"soma={s}")
-    animate_circuit(path)
-    make_circuit_video('fig/png/', 'cpp_anim.gif', fps=3)
+    # animate_circuit(path)
+    # make_circuit_video('fig/png/', 'cpp_anim.gif', fps=3)

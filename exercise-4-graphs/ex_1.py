@@ -42,19 +42,31 @@ if __name__ == "__main__":
 
     # G = nx.DiGraph(adj_mat)
     G = nx.DiGraph(dod)
+    G.node["a1"]["demand"] = -2
+    G.node["a2"]["demand"] = -2
+    G.node["a3"]["demand"] = -1
+    # G.node["1"]["demand"] = 0
+    # G.node["1"]["capacity"] = 0
+    # G.node["2"]["demand"] = 0
+    # G.node["2"]["capacity"] = 0
+    G.node["b1"]["demand"] = 2
+    G.node["b2"]["demand"] = 2
+    G.node["b3"]["demand"] = 1
     # G = nx.relabel_nodes(G, map)
     # pos = nx.random_layout(G)
     pos = graphviz_layout(G, prog="dot")
-    nx.draw(G, pos, node_color="lightblue")
-    nx.draw_networkx_edge_labels(G, pos)
-    nx.draw_networkx_labels(G, pos)
-    plt.show()
+    # nx.draw(G, pos, node_color="lightblue")
+    # nx.draw_networkx_edge_labels(G, pos)
+    # nx.draw_networkx_labels(G, pos)
+    # plt.show()
 
-    print(nx.dijkstra_predecessor_and_distance(G, "a1"))
-    print(nx.dijkstra_predecessor_and_distance(G, "a2"))
-    print(nx.dijkstra_predecessor_and_distance(G, "a3"))
+    # print(nx.dijkstra_predecessor_and_distance(G, "a1"))
+    # print(nx.dijkstra_predecessor_and_distance(G, "a2"))
+    # print(nx.dijkstra_predecessor_and_distance(G, "a3"))
 
-    print(list(nx.bfs_edges(G, "a1")))
-    print(list(nx.dfs_edges(G, "a1")))
+    # print(list(nx.bfs_edges(G, "a1")))
+    # print(list(nx.dfs_edges(G, "a1")))
 
+    # print(nx.algorithms.max_weight_matching(G, True))
+    print(nx.min_cost_flow(G))
     print(G)
