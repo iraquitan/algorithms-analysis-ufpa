@@ -30,22 +30,25 @@ if __name__ == '__main__':
         ('text', lambda n: text[0:n]),
     ]
 
+    unusual_pattern = "03:00"
+    usual_pattern = "2001-09-11"
+    absent_pattern = "iraquitan"
     algorithms1 = [
-        # ('BMH_padrao_incomun', partial(bmh, pattern='brazil')),
-        # ('BMHS_padrao_incomun', partial(bmhs, pattern='brazil')),
-        # ('Shift-And_padrao_incomun', partial(shift_and, pattern='brazil')),
+        ('BMH_padrao_incomun', partial(bmh, pattern=unusual_pattern)),
+        ('BMHS_padrao_incomun', partial(bmhs, pattern=unusual_pattern)),
+        ('Shift-And_padrao_incomun', partial(shift_and, pattern=unusual_pattern)),
     ]
 
     algorithms2 = [
-        # ('BMH_padrao_comun', partial(bmh, pattern='2001-09-11')),
-        # ('BMHS_padrao_comun', partial(bmhs, pattern='2001-09-11')),
-        # ('Shift-And_padrao_comun', partial(shift_and, pattern='2001-09-11')),
+        ('BMH_padrao_comun', partial(bmh, pattern=usual_pattern)),
+        ('BMHS_padrao_comun', partial(bmhs, pattern=usual_pattern)),
+        ('Shift-And_padrao_comun', partial(shift_and, pattern=usual_pattern)),
     ]
 
     algorithms3 = [
-        # ('BMH_padrao_inexistente', partial(bmh, pattern='iraquitan')),
-        # ('BMHS_padrao_inexistente', partial(bmhs, pattern='iraquitan')),
-        # ('Shift-And_padrao_inexistente', partial(shift_and, pattern='iraquitan')),
+        ('BMH_padrao_inexistente', partial(bmh, pattern=absent_pattern)),
+        ('BMHS_padrao_inexistente', partial(bmhs, pattern=absent_pattern)),
+        ('Shift-And_padrao_inexistente', partial(shift_and, pattern=absent_pattern)),
     ]
 
     algorithms4 = [
@@ -55,9 +58,9 @@ if __name__ == '__main__':
     ]
 
     algorithms = [
-        # algorithms1,
-        # algorithms2,
-        # algorithms3,
+        algorithms1,
+        algorithms2,
+        algorithms3,
         algorithms4
     ]
 
